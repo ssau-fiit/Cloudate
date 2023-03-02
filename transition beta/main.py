@@ -1,10 +1,10 @@
 import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 from signup import Ui_MainWindow
 from Redactor import Window
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QFileDialog
-from PyQt5 import QtCore
+from PyQt6 import QtWidgets
+from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QFileDialog
+from PyQt6 import QtCore
 
 app = QtWidgets.QApplication(sys.argv)
 MainWindow = QtWidgets.QMainWindow()
@@ -28,4 +28,4 @@ def openOtherWindow():
 
 ui.pushButton.clicked.connect(openOtherWindow)
 
-sys.exit(app.exec_())
+sys.exit(app.exec())

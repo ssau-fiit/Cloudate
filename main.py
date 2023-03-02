@@ -1,6 +1,6 @@
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QFileDialog
-from PyQt5 import QtCore
+from PyQt6 import QtWidgets
+from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QFileDialog
+from PyQt6 import QtCore
 
 import sys
 
@@ -49,7 +49,6 @@ class Window(QMainWindow):
                     text = self.text_edit.toPlainText()
                     f.write(text)
 
-            
 
 
 def application():
@@ -57,7 +56,7 @@ def application():
     window = Window()
 
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
     application()
