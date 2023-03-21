@@ -1,5 +1,6 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout
 from Redactor import Editor
 
 
@@ -9,21 +10,35 @@ class DocumentsWindow(QtWidgets.QDialog):
 
         self.setMinimumWidth(500)
         self.setMinimumHeight(500)
-        self.setWindowTitle("Documets list")
+        self.setWindowTitle("Documents list")
 
-        self.listWidget = QtWidgets.QListWidget(self)
-        self.listWidget.setGeometry(QtCore.QRect(20, 20, 461, 461))
-        self.listWidget.setObjectName("listWidget")
+        self.documentsList = QtWidgets.QListWidget(self)
+        self.documentsList.setGeometry(QtCore.QRect(20, 20, 480, 480))
+        self.documentsList.setObjectName("documentsList")
         
-        self.pushButton = QtWidgets.QPushButton(self)
-        self.pushButton.setGeometry(QtCore.QRect(100, 70, 81, 23))
-        self.pushButton.clicked.connect(self.showRedactor)
-        self.pushButton.setObjectName("pushButton")
-        self.pushButton.setText("переход к редактору")
+        self.editorButton = QtWidgets.QPushButton(self)
+        self.editorButton.clicked.connect(self.showRedactor)
+        self.editorButton.setObjectName("editorButton")
+        self.editorButton.setText("Редактор")
+
+        self.newDocumentButton = QtWidgets.QPushButton(self)
+        self.newDocumentButton.clicked.connect(self.addNewDocument)
+        self.newDocumentButton.setObjectName("newDocumentButton")
+        self.newDocumentButton.setText("Новый документ")        
+
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.documentsList)
+        vbox.addWidget(self.editorButton)
+        vbox.addWidget(self.newDocumentButton)
+
+        self.setLayout(vbox)
 
     def showRedactor(self):
         self.editor_win = Editor()
         self.editor_win.show()
+
+    def addNewDocument(self):
+        self.documentsList.addItem("Empty document")
 
 
 if __name__ == "__main__":
