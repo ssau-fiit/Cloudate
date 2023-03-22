@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QPushButton
 from registration_form import RegistrationWindow
 from docs_list import DocumentsWindow
 
@@ -26,4 +26,4 @@ if __name__ == '__main__':
     w = MainWindow()
     w.showRegistration()
     
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
