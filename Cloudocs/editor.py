@@ -4,9 +4,10 @@ from PyQt6 import QtCore
 
 import sys
 
-class Editor(QtWidgets.QDialog):
+
+class Editor(QtWidgets.QMainWindow):
     def __init__(self):
-        super(Editor, self).__init__()
+        super().__init__()
 
         self.filename = None
 
@@ -18,7 +19,6 @@ class Editor(QtWidgets.QDialog):
 
         self.createMenuBar()
 
-
     def createMenuBar(self):
         self.menuBar = QMenuBar()
         self.setMenuBar(self.menuBar)
@@ -29,13 +29,11 @@ class Editor(QtWidgets.QDialog):
         fileMenu.addAction("Открыть", self.action_clicked)
         fileMenu.addAction("Сохранить", self.action_clicked)
 
-
     def action_clicked(self):
         action = self.sender()
 
         if action.text() == "Открыть":
             self.filename = QFileDialog.getOpenFileName(self)[0]
-
 
             if len(self.filename) > 0:
                 with open(self.filename, "r") as f:
@@ -55,8 +53,8 @@ class Editor(QtWidgets.QDialog):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    
+
     window = Editor()
     window.show()
-    
+
     sys.exit(app.exec())
