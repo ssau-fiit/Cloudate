@@ -1,7 +1,6 @@
-import http
 import sys
 import requests
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtWidgets
 from documents_window import DocumentsWindow
 
 
@@ -54,15 +53,17 @@ class RegistrationWindow(QtWidgets.QMainWindow):
 
         url = "http://api.cloudocs.parasource.tech:8080/api/v1/auth"
         data = {"username": username, "password": password}
-        response = requests.post(url, json = data)
 
-        if response.status_code != 200:
-            QtWidgets.QMessageBox.critical(self, "Authentication failed!",
-                                                 f"Status code: {response.status_code}")
-            return
+        try:
+            response = requests.post(url, json = data)
+            if response.status_code != 200:
+                QtWidgets.QMessageBox.critical(self, "Authentication failed!",
+                                                     f"Status code: {response.status_code}")
 
-        user_id = response.json()['user_id']
-        self.goToDocumentsWindow(user_id)
+            user_id = response.json()['user_id']
+            self.goToDocumentsWindow(user_id)
+        except Exception as e:
+            print(e)
 
 
 if __name__ == "__main__":

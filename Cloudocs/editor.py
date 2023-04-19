@@ -1,21 +1,33 @@
 from PyQt6 import QtWidgets
 from PyQt6.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QFileDialog
-from PyQt6 import QtCore
+import requests as rq
 
 import sys
 
 
 class Editor(QtWidgets.QMainWindow):
-    def __init__(self):
+    def __init__(self, name: str, ID: int):
         super().__init__()
 
+        self.name = name
+        self.ID = ID
+        print(self.ID)
+
+        self.menuBar = None
         self.filename = None
 
-        self.setWindowTitle("Редактор")
+        self.setWindowTitle(self.name)
         self.setGeometry(300, 250, 350, 200)
 
         self.text_edit = QtWidgets.QTextEdit(self)
         self.setCentralWidget(self.text_edit)
+
+        # Get text from server
+        resp = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(ID))
+
+        if resp.status_code == 200:
+            doc_text = resp.json()["text"]
+            self.text_edit.setText(doc_text)
 
         self.createMenuBar()
 
@@ -26,29 +38,21 @@ class Editor(QtWidgets.QMainWindow):
         fileMenu = QMenu("&Файл", self)
         self.menuBar.addMenu(fileMenu)
 
-        fileMenu.addAction("Открыть", self.action_clicked)
         fileMenu.addAction("Сохранить", self.action_clicked)
 
     def action_clicked(self):
         action = self.sender()
 
-        if action.text() == "Открыть":
-            self.filename = QFileDialog.getOpenFileName(self)[0]
+        if action.text() == "Сохранить":
+            doc_text = self.text_edit.toPlainText()
 
-            if len(self.filename) > 0:
-                with open(self.filename, "r") as f:
-                    data = f.read()
-                    self.text_edit.setText(data)
+            resp = rq.post("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(self.ID),
+                           json = {"text": doc_text})
+
+            if resp.status_code == 200:
+                QtWidgets.QMessageBox.information(self, "All is good", "Changes saved!")
             else:
-                print("Файл не найден")
-
-        elif action.text() == "Сохранить":
-            self.filename = QFileDialog.getSaveFileName(self)[0]
-
-            if len(self.filename) > 0:
-                with open(self.filename, "w") as f:
-                    text = self.text_edit.toPlainText()
-                    f.write(text)
+                QtWidgets.QMessageBox.critical("Sending text error", f"Status code: {resp.status_code}")
 
 
 if __name__ == "__main__":

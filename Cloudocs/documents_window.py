@@ -1,5 +1,4 @@
 import sys
-from PyQt6 import QtWidgets
 from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtWidgets import QVBoxLayout
 import requests as rq
@@ -7,16 +6,19 @@ from editor import Editor
 
 
 class FileItem(QtWidgets.QListWidgetItem):
-    def __init__(self, fullpath: str):
-        super().__init__(fullpath.split('/')[-1])
+    def __init__(self, ID: int, name: str, author: str):
+        super().__init__(name)
 
-        self.fullpath = fullpath
+        self.ID = ID
+        self.name = name
+        self.author = author
 
 
-class DocumentsWindow(QtWidgets.QDialog):
+class DocumentsWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.menuBar = None
         self.editor_win = None
 
         # Will be initialized after call registration_window
@@ -29,21 +31,34 @@ class DocumentsWindow(QtWidgets.QDialog):
 
         self.documentsList = QtWidgets.QListWidget(self)
         self.documentsList.setGeometry(QtCore.QRect(20, 20, 480, 480))
-        self.documentsList.itemClicked.connect(self.filenameClicked)
-        self.documentsList.setObjectName("documentsList")
-
+        self.documentsList.itemDoubleClicked.connect(self.filenameClicked)
         self.addDocumentsToList()
+        self.documentsList.setObjectName("documentsList")
 
         self.newDocumentButton = QtWidgets.QPushButton(self)
         self.newDocumentButton.clicked.connect(self.addNewDocument)
         self.newDocumentButton.setObjectName("newDocumentButton")
         self.newDocumentButton.setText("Новый документ")
 
+        self.createMenuBar()
+
         vbox = QVBoxLayout()
         vbox.addWidget(self.documentsList)
         vbox.addWidget(self.newDocumentButton)
 
-        self.setLayout(vbox)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(vbox)
+        self.setCentralWidget(widget)
+        # self.setLayout(vbox)
+
+    def createMenuBar(self):
+        self.menuBar = QtWidgets.QMenuBar()
+        self.setMenuBar(self.menuBar)
+
+        fileMenu = QtWidgets.QMenu("&Файл", self)
+        self.menuBar.addMenu(fileMenu)
+
+        fileMenu.addAction("Новый документ", self.addNewDocumentMenu)
 
     def show(self):
         super().show()
@@ -52,31 +67,32 @@ class DocumentsWindow(QtWidgets.QDialog):
     def addDocumentsToList(self):
         try:
             # JSON objects of documents
-            json_documents = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents")
+            documents = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents")
 
-            if json_documents.status_code == 200 and json_documents is not None:
-                # Get name of each document
-                document_names = list(
-                    map(lambda json_obj: f"{json_obj['name']} (ID = {json_obj['ID']})", json_documents.json())
-                )
+            if documents.status_code == 200 and documents is not None:
                 # Adding documents to the list
-                for name in document_names:
-                    self.documentsList.addItem(FileItem(name))
+                for doc in documents.json():
+                    self.documentsList.addItem(FileItem(doc["ID"], doc["name"], doc["author"]))
         except Exception as e:
             print(e)
+            print("Ошибка")
 
     def addNewDocument(self):
-        # Get filenames from QFileDialog
-        filenames = QtWidgets.QFileDialog.getOpenFileNames(self)[0]
-        # Cast it to the FileItem
-        list_items = [FileItem(fullpath) for fullpath in filenames]
-        # Add to the list
-        for item in list_items:
-            self.documentsList.addItem(item)
+        self.editor_win = Editor("Default", -1)
+        self.editor_win.show()
+
+    def addNewDocumentMenu(self):
+        action = self.sender()
+
+        if action.text() == "Новый документ":
+            print("Новый документ")
+            # self.editor_win = Editor()
+            # self.editor_win.show()
+
 
     def filenameClicked(self, item):
-        print(f"Filename: {item.fullpath}")
-        self.editor_win = Editor()
+        print(f"Filename: {item.name}")
+        self.editor_win = Editor(item.name, item.ID)
         self.editor_win.show()
 
 
