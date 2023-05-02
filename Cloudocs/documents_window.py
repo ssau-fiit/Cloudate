@@ -1,6 +1,6 @@
 import sys
-from PyQt6 import QtCore, QtWidgets
-from PyQt6.QtWidgets import QVBoxLayout
+from PySide6 import QtCore, QtWidgets
+from PySide6.QtWidgets import QVBoxLayout
 import requests as rq
 from editor import Editor
 
@@ -49,7 +49,6 @@ class DocumentsWindow(QtWidgets.QMainWindow):
         widget = QtWidgets.QWidget()
         widget.setLayout(vbox)
         self.setCentralWidget(widget)
-        # self.setLayout(vbox)
 
     def createMenuBar(self):
         self.menuBar = QtWidgets.QMenuBar()
@@ -72,14 +71,32 @@ class DocumentsWindow(QtWidgets.QMainWindow):
             if documents.status_code == 200 and documents is not None:
                 # Adding documents to the list
                 for doc in documents.json():
-                    self.documentsList.addItem(FileItem(doc["ID"], doc["name"], doc["author"]))
+                    item = FileItem(doc["ID"], doc["name"], doc["author"])
+                    self.documentsList.addItem(item)
+
         except Exception as e:
             print(e)
-            print("Ошибка")
 
     def addNewDocument(self):
-        self.editor_win = Editor("Default", -1)
+        self.editor_win = Editor("New document", -1)
+        self.editor_win.new_file.connect(self.updateDocuments)
         self.editor_win.show()
+
+    def updateDocuments(self):
+        self.documentsList.clear()
+
+        try:
+            # JSON objects of documents
+            documents = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents")
+
+            if documents.status_code == 200 and documents is not None:
+                # Adding documents to the list
+                for doc in documents.json():
+                    item = FileItem(doc["ID"], doc["name"], doc["author"])
+                    self.documentsList.addItem(item)
+
+        except Exception as e:
+            print(e)
 
     def addNewDocumentMenu(self):
         action = self.sender()
@@ -88,7 +105,6 @@ class DocumentsWindow(QtWidgets.QMainWindow):
             print("Новый документ")
             # self.editor_win = Editor()
             # self.editor_win.show()
-
 
     def filenameClicked(self, item):
         print(f"Filename: {item.name}")

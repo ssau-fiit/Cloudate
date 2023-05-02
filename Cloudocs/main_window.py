@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
 from registration_window import RegistrationWindow
 
 
@@ -8,5 +8,5 @@ if __name__ == '__main__':
     
     w = RegistrationWindow()
     w.show()
-    
+
     sys.exit(app.exec())

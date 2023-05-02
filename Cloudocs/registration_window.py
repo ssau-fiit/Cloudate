@@ -1,6 +1,6 @@
 import sys
 import requests
-from PyQt6 import QtWidgets
+from PySide6 import QtWidgets
 from documents_window import DocumentsWindow
 
 
