@@ -6,6 +6,9 @@ import sys
 from ServerConstants import Server
 from websockets.sync.client import connect
 from string import printable
+import json
+import base64
+
 
 class InputDialog(QDialog):
     def __init__(self):
@@ -34,16 +37,29 @@ class InputDialog(QDialog):
 
 
 class TextEdit(QtWidgets.QTextEdit):
-    def __init__(self,wsock):
+    def __init__(self, wsock):
         super().__init__()
         self.wsock = wsock
 
-
     def keyPressEvent(self, event):
         super().keyPressEvent(event)
+
+        operation = {
+            "type": "INSERT",
+            "len": 1,
+            "version": 1,
+            "text": "p"
+        }
+        data = json.dumps(operation)
+        encoded = base64.b64encode(bytes(data, 'utf-8'))
+        serv_event = {
+            "type": "OPERATION",
+            "event": encoded.decode("utf-8")
+        }
+        self.wsock.send(json.dumps(serv_event))
+
         if event.key() == Qt.Key_Backspace:
             print("Backspace pressed")
-
         elif event.key() == Qt.Key_Enter:
             print("Enter pressed")
         elif event.key() == Qt.Key_Space:
@@ -70,15 +86,10 @@ class Editor(QtWidgets.QMainWindow):
         self.ID = ID
         self.wsock = connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID))
 
-
-
         # with connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)) as websocket:
         #     websocket.send("Hello world!")
-            # message = websocket.recv()
-            # print(f"Received: {message}")
-
-
-
+        # message = websocket.recv()
+        # print(f"Received: {message}")
 
         self.menuBar = None
         self.filename = None
@@ -126,7 +137,7 @@ class Editor(QtWidgets.QMainWindow):
                     # Creating new document
                     doc_name = inputDialog.nameEdit.text()
                     resp = rq.post(Server.url + Server.createDocument,
-                                   json = {
+                                   json={
                                        "name": doc_name,
                                        "author": "Will Smith"
                                    })
@@ -156,7 +167,7 @@ class Editor(QtWidgets.QMainWindow):
             # Saving text of document
             doc_text = self.text_edit.toPlainText()
             resp = rq.post("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(self.ID),
-                           json = {"text": doc_text})
+                           json={"text": doc_text})
 
             if resp.status_code == 200:
                 QtWidgets.QMessageBox.information(self, "All is good", "Changes saved!")
