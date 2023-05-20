@@ -5,7 +5,7 @@ import requests as rq
 import sys
 from ServerConstants import Server
 from websockets.sync.client import connect
-
+from string import printable
 
 class InputDialog(QDialog):
     def __init__(self):
@@ -41,6 +41,20 @@ class TextEdit(QtWidgets.QTextEdit):
         super().keyPressEvent(event)
         if event.key() == Qt.Key_Backspace:
             print("Backspace pressed")
+        elif event.key() == Qt.Key_Enter:
+            print("Enter pressed")
+        elif event.key() == Qt.Key_Space:
+            print("Space pressed")
+        elif event.key() == Qt.Key_Tab:
+            print("Tab pressed")
+        elif event.key() == Qt.Key_Escape:
+            print("Escape pressed")
+        else:
+            text_key = event.text()
+            if text_key:
+                print(text_key)
+            else:
+                print(event.key())
 
 
 class Editor(QtWidgets.QMainWindow):
@@ -65,7 +79,7 @@ class Editor(QtWidgets.QMainWindow):
 
         # self.text_edit = QtWidgets.QTextEdit(self)
         self.text_edit = TextEdit()
-        self.text_edit.textChanged.connect(self.on_text_changed)
+        # self.text_edit.textChanged.connect(self.on_text_changed)
 
         self.setCentralWidget(self.text_edit)
 
@@ -141,19 +155,7 @@ class Editor(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.critical(self,
                                                "Sending text error", f"Status code: {resp.status_code}")
 
-    def on_backspace_pressed(self):
-        print("Нажата клавиша backspace")
-
-    def keyPressEvent(self, event: QtGui.QKeyEvent):
-        print(event.text())
-
     def on_text_changed(self):
-        text = self.text_edit.toPlainText()
-        last_char = ""
-        if text:
-            last_char = text[-1]
-        print(f"Последний символ: {last_char}")
-
         cursor = self.text_edit.textCursor()
         position = cursor.position()
         line_number = cursor.blockNumber()
