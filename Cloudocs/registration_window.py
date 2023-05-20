@@ -57,8 +57,12 @@ class RegistrationWindow(QtWidgets.QMainWindow):
         try:
             response = requests.post(url, json = data)
             if response.status_code != 200:
-                QtWidgets.QMessageBox.critical(self, "Authentication failed!",
-                                                     f"Status code: {response.status_code}")
+                if response.status_code == 401:
+                    QtWidgets.QMessageBox.critical(self, "Ошибка аутентификации",
+                                                   f"Неверный логин или пароль")
+                else:
+                    QtWidgets.QMessageBox.critical(self, "Ошибка аутентификации",
+                                                   f"Код ошибки: {response.status_code}")
 
             user_id = response.json()['user_id']
             self.goToDocumentsWindow(user_id)
