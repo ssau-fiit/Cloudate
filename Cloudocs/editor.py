@@ -5,6 +5,7 @@ import requests as rq
 import sys
 import socket
 from ServerConstants import Server
+from websockets.sync.client import connect
 
 
 class InputDialog(QDialog):
@@ -39,10 +40,11 @@ class Editor(QtWidgets.QMainWindow):
     def __init__(self, name: str, ID: int):
         super().__init__()
 
-        sock = socket.socket()
-        sock.connect((Server.host, Server.url))  # Подключаемся к серверу
-        sock.send('!')
-        sock.close()
+        with connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/981723") as websocket:
+            websocket.send("Hello world!")
+            message = websocket.recv()
+            print(f"Received: {message}")
+
         self.name = name
         self.ID = ID
 
