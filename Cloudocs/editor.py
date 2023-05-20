@@ -1,5 +1,5 @@
 from PySide6 import QtWidgets, QtGui, QtCore
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QApplication, QMenuBar, QMenu, QDialog
 import requests as rq
 import sys
@@ -33,6 +33,16 @@ class InputDialog(QDialog):
         self.close()
 
 
+class TextEdit(QtWidgets.QTextEdit):
+    def __init__(self):
+        super().__init__()
+
+    def keyPressEvent(self, event):
+        super().keyPressEvent(event)
+        if event.key() == Qt.Key_Backspace:
+            print("Backspace pressed")
+
+
 class Editor(QtWidgets.QMainWindow):
     new_file = Signal()
 
@@ -42,10 +52,10 @@ class Editor(QtWidgets.QMainWindow):
         self.name = name
         self.ID = ID
 
-        with connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)) as websocket:
-            websocket.send("Hello world!")
-            message = websocket.recv()
-            print(f"Received: {message}")
+        # with connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)) as websocket:
+        #     websocket.send("Hello world!")
+        #     message = websocket.recv()
+        #     print(f"Received: {message}")
 
         self.menuBar = None
         self.filename = None
@@ -53,13 +63,15 @@ class Editor(QtWidgets.QMainWindow):
         self.setWindowTitle(self.name)
         self.setGeometry(300, 250, 350, 200)
 
-        self.text_edit = QtWidgets.QTextEdit(self)
+        # self.text_edit = QtWidgets.QTextEdit(self)
+        self.text_edit = TextEdit()
         self.text_edit.textChanged.connect(self.on_text_changed)
+
         self.setCentralWidget(self.text_edit)
 
-        # Создаем горячую клавишу для нажатия клавиши backspace
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Backspace"), self.text_edit)
-        shortcut.activated.connect(self.on_backspace_pressed)
+        # # Создаем горячую клавишу для нажатия клавиши backspace
+        # shortcut = QtGui.QShortcut(QtGui.QKeySequence("Backspace"), self.text_edit)
+        # shortcut.activated.connect(self.on_backspace_pressed)
 
         # Get text from server
         resp = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(ID))
@@ -126,10 +138,14 @@ class Editor(QtWidgets.QMainWindow):
             if resp.status_code == 200:
                 QtWidgets.QMessageBox.information(self, "All is good", "Changes saved!")
             else:
-                QtWidgets.QMessageBox.critical(self, "Sending text error", f"Status code: {resp.status_code}")
+                QtWidgets.QMessageBox.critical(self,
+                                               "Sending text error", f"Status code: {resp.status_code}")
 
     def on_backspace_pressed(self):
         print("Нажата клавиша backspace")
+
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
+        print(event.text())
 
     def on_text_changed(self):
         text = self.text_edit.toPlainText()
