@@ -1,6 +1,6 @@
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QFileDialog, QDialog
+from PySide6.QtWidgets import QApplication, QMenuBar, QMenu, QDialog
 import requests as rq
 import sys
 from ServerConstants import Server
@@ -39,13 +39,13 @@ class Editor(QtWidgets.QMainWindow):
     def __init__(self, name: str, ID: int):
         super().__init__()
 
-        with connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/981723") as websocket:
+        self.name = name
+        self.ID = ID
+
+        with connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)) as websocket:
             websocket.send("Hello world!")
             message = websocket.recv()
             print(f"Received: {message}")
-
-        self.name = name
-        self.ID = ID
 
         self.menuBar = None
         self.filename = None
@@ -54,9 +54,12 @@ class Editor(QtWidgets.QMainWindow):
         self.setGeometry(300, 250, 350, 200)
 
         self.text_edit = QtWidgets.QTextEdit(self)
-        # self.text_edit.textChanged(self.send_doc)
+        self.text_edit.textChanged.connect(self.on_text_changed)
         self.setCentralWidget(self.text_edit)
 
+        # Создаем горячую клавишу для нажатия клавиши backspace
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Backspace"), self.text_edit)
+        shortcut.activated.connect(self.on_backspace_pressed)
 
         # Get text from server
         resp = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(ID))
@@ -125,12 +128,17 @@ class Editor(QtWidgets.QMainWindow):
             else:
                 QtWidgets.QMessageBox.critical(self, "Sending text error", f"Status code: {resp.status_code}")
 
-    def send_doc(self):
-        pass
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    def on_backspace_pressed(self):
+        print("Нажата клавиша backspace")
 
-    window = Editor()
-    window.show()
+    def on_text_changed(self):
+        text = self.text_edit.toPlainText()
+        last_char = ""
+        if text:
+            last_char = text[-1]
+        print(f"Последний символ: {last_char}")
 
-    sys.exit(app.exec())
+        cursor = self.text_edit.textCursor()
+        position = cursor.position()
+        line_number = cursor.blockNumber()
+        print(f"Курсор находится на позиции {position} в строке номер {line_number}")
