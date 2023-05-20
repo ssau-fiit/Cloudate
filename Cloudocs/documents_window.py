@@ -1,7 +1,12 @@
 import sys
-from PySide6 import QtCore, QtWidgets
+
+
+from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtWidgets import QVBoxLayout
 import requests as rq
+
+from ServerConstants import Server
+
 from editor import Editor
 
 
@@ -30,6 +35,7 @@ class DocumentsWindow(QtWidgets.QMainWindow):
         self.setMinimumHeight(500)
 
         self.documentsList = QtWidgets.QListWidget(self)
+        # self.documentsList.setSelectionMode(QtGui.QListView.Extended)
         self.documentsList.setGeometry(QtCore.QRect(20, 20, 480, 480))
         self.documentsList.itemDoubleClicked.connect(self.filenameClicked)
         self.addDocumentsToList()
@@ -40,11 +46,16 @@ class DocumentsWindow(QtWidgets.QMainWindow):
         self.newDocumentButton.setObjectName("newDocumentButton")
         self.newDocumentButton.setText("Новый документ")
 
+        self.deleteButton = QtWidgets.QPushButton(self)
+        self.deleteButton.clicked.connect(self.deleteDocument)
+        self.deleteButton.setText("Удалить")
+
         self.createMenuBar()
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.documentsList)
         vbox.addWidget(self.newDocumentButton)
+        vbox.addWidget(self.deleteButton)
 
         widget = QtWidgets.QWidget()
         widget.setLayout(vbox)
@@ -110,6 +121,24 @@ class DocumentsWindow(QtWidgets.QMainWindow):
         print(f"Filename: {item.name}")
         self.editor_win = Editor(item.name, item.ID)
         self.editor_win.show()
+
+    def deleteDocument(self):
+        if not self.documentsList.selectedItems():
+            print("error")
+            return
+        item = self.documentsList.selectedItems()[0]
+        self.documentsList.takeItem(self.documentsList.row(item))
+
+        try:
+            # JSON objects of documents
+            doc_delete = rq.delete(Server.url + Server.getDocument + item.ID)
+            if doc_delete.status_code != 200:
+                print("Error")
+        except Exception as e:
+            print(e)
+
+
+
 
 
 if __name__ == "__main__":
