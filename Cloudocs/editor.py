@@ -3,7 +3,6 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QFileDialog, QDialog
 import requests as rq
 import sys
-import socket
 from ServerConstants import Server
 from websockets.sync.client import connect
 

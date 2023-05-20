@@ -90,6 +90,11 @@ class DocumentsWindow(QtWidgets.QMainWindow):
 
     def addNewDocument(self):
         inputDialog = InputDialog()
+        inputDialog.setMinimumWidth(400)
+        inputDialog.setMinimumHeight(200)
+        inputDialog.setWindowTitle("Создать документ")
+        inputDialog.continueBtn.setText("Создать")
+        inputDialog.nameEdit.setPlaceholderText("Название документа")
         if inputDialog.exec() == 0:
             # Creating new document
             doc_name = inputDialog.nameEdit.text()
