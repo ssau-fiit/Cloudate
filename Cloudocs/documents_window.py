@@ -7,7 +7,7 @@ import requests as rq
 
 from ServerConstants import Server
 
-from editor import Editor
+from editor import Editor, InputDialog
 
 
 class FileItem(QtWidgets.QListWidgetItem):
@@ -89,10 +89,36 @@ class DocumentsWindow(QtWidgets.QMainWindow):
             print(e)
 
     def addNewDocument(self):
-        self.editor_win = Editor("New document", -1)
-        self.editor_win.new_file.connect(self.updateDocuments)
-        self.editor_win.show()
+        inputDialog = InputDialog()
+        if inputDialog.exec() == 0:
+            # Creating new document
+            doc_name = inputDialog.nameEdit.text()
+            resp = rq.post(Server.url + Server.createDocument,
+                           json={
+                               "name": doc_name,
+                               "author": "Will Smith"
+                           })
 
+            if resp.status_code == 200:
+                json_doc = resp.json()
+                self.ID = json_doc["ID"]
+                self.name = json_doc["name"]
+
+                # self.setWindowTitle(self.name)
+
+                QtWidgets.QMessageBox.information(self,
+                                                  "Creating new document",
+                                                  "New document created successfully")
+                # self.new_file.emit()
+
+            else:
+                QtWidgets.QMessageBox.critical(self,
+                                               "Creating document error",
+                                               f"Status code: {resp.status_code}")
+        # self.editor_win = Editor("New document", -1)
+        # self.editor_win.new_file.connect(self.updateDocuments)
+        # self.editor_win.show()
+        self.updateDocuments()
     def updateDocuments(self):
         self.documentsList.clear()
 
