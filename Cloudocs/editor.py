@@ -34,13 +34,16 @@ class InputDialog(QDialog):
 
 
 class TextEdit(QtWidgets.QTextEdit):
-    def __init__(self):
+    def __init__(self,wsock):
         super().__init__()
+        self.wsock = wsock
+
 
     def keyPressEvent(self, event):
         super().keyPressEvent(event)
         if event.key() == Qt.Key_Backspace:
             print("Backspace pressed")
+
         elif event.key() == Qt.Key_Enter:
             print("Enter pressed")
         elif event.key() == Qt.Key_Space:
@@ -65,11 +68,17 @@ class Editor(QtWidgets.QMainWindow):
 
         self.name = name
         self.ID = ID
+        self.wsock = connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID))
+
+
 
         # with connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)) as websocket:
         #     websocket.send("Hello world!")
-        #     message = websocket.recv()
-        #     print(f"Received: {message}")
+            # message = websocket.recv()
+            # print(f"Received: {message}")
+
+
+
 
         self.menuBar = None
         self.filename = None
@@ -78,7 +87,7 @@ class Editor(QtWidgets.QMainWindow):
         self.setGeometry(300, 250, 350, 200)
 
         # self.text_edit = QtWidgets.QTextEdit(self)
-        self.text_edit = TextEdit()
+        self.text_edit = TextEdit(self.wsock)
         # self.text_edit.textChanged.connect(self.on_text_changed)
 
         self.setCentralWidget(self.text_edit)
