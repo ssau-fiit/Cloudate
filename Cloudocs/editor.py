@@ -3,6 +3,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QApplication, QMainWindow, QMenuBar, QMenu, QFileDialog, QDialog
 import requests as rq
 import sys
+import socket
 from ServerConstants import Server
 
 
@@ -38,6 +39,10 @@ class Editor(QtWidgets.QMainWindow):
     def __init__(self, name: str, ID: int):
         super().__init__()
 
+        sock = socket.socket()
+        sock.connect((Server.host, Server.url))  # Подключаемся к серверу
+        sock.send('!')
+        sock.close()
         self.name = name
         self.ID = ID
 
@@ -48,7 +53,9 @@ class Editor(QtWidgets.QMainWindow):
         self.setGeometry(300, 250, 350, 200)
 
         self.text_edit = QtWidgets.QTextEdit(self)
+        # self.text_edit.textChanged(self.send_doc)
         self.setCentralWidget(self.text_edit)
+
 
         # Get text from server
         resp = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(ID))
@@ -117,7 +124,8 @@ class Editor(QtWidgets.QMainWindow):
             else:
                 QtWidgets.QMessageBox.critical(self, "Sending text error", f"Status code: {resp.status_code}")
 
-
+    def send_doc(self):
+        pass
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 

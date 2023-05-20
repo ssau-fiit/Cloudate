@@ -1,6 +1,7 @@
 class Server:
     url = "http://api.cloudocs.parasource.tech:8080"
-
+    host = "http://api.cloudocs.parasource.tech"
+    port = 8080
     # POST
     auth = "/api/v1/auth"
     createDocument = "/api/v1/documents/create"
