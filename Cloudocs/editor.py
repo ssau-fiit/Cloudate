@@ -68,6 +68,7 @@ class TextEdit(QtWidgets.QTextEdit):
         line_number = cursor.blockNumber()
         position = cursor.position()
         text_position = 0
+        serv_event = None
 
         print(f"Курсор находится на позиции {position} в строке номер {line_number}")
 
@@ -99,6 +100,7 @@ class TextEdit(QtWidgets.QTextEdit):
             else:
                 print(event.key())
 
+        self.wsock.send(json.dumps(serv_event))
 
 class Editor(QtWidgets.QMainWindow):
     new_file = Signal()
