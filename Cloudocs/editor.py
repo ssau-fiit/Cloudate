@@ -36,15 +36,19 @@ class InputDialog(QDialog):
 
 
 class TextEdit(QtWidgets.QTextEdit):
-    def __init__(self, wsock):
+    def __init__(self, wsock, ID: int):
         super().__init__()
         self.wsock = wsock
+        self.ID = ID
 
-    def getServerEvent(self, op_type: str, length: int, version: int, text: str):
+    def getServerEvent(self, op_type: str, length: int, version: int, index: int, text: str):
         # op_type from ServerConstants.OpType
+
         operation = {
+            "userID": self.ID,
             "type": op_type,
             "len": length,
+            "index": index,
             "version": version,
             "text": text
         }
@@ -59,27 +63,38 @@ class TextEdit(QtWidgets.QTextEdit):
     def keyPressEvent(self, event):
         super().keyPressEvent(event)
 
-        serv_event = self.getServerEvent(OpType.INSERT, 1, 1, "x")
+        # Get cursor index
+        cursor = self.textCursor()
+        line_number = cursor.blockNumber()
+        position = cursor.position()
+        text_position = 0
 
-        if self.wsock is not None:
-            self.wsock.send(json.dumps(serv_event))
+        print(f"Курсор находится на позиции {position} в строке номер {line_number}")
 
+        # TODO: Добавить отправку события serv_event по сокету
         if event.key() == Qt.Key_Backspace:
-            serv_event = self.getServerEvent(OpType.DELETE, 1, 1, "\b")
+            selected_text = cursor.selectedText()
+            print(f"Selected: {selected_text}")
+
+            serv_event = self.getServerEvent(OpType.DELETE, 1, 1, text_position, "\b")
             print("Backspace pressed")
+
         elif event.key() == Qt.Key_Enter:
-            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, "\n")
+            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, text_position, "\n")
             print("Enter pressed")
+
         elif event.key() == Qt.Key_Space:
-            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, " ")
+            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, text_position, " ")
             print("Space pressed")
+
         elif event.key() == Qt.Key_Tab:
-            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, "\t")
+            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, text_position, "\t")
             print("Tab pressed")
+
         else:
             text_key = event.text()
             if text_key:
-                serv_event = self.getServerEvent(OpType.INSERT, len(text_key), 1, text_key)
+                serv_event = self.getServerEvent(OpType.INSERT, 1, 1, text_position, text_key)
                 print(text_key)
             else:
                 print(event.key())
@@ -105,8 +120,7 @@ class Editor(QtWidgets.QMainWindow):
         self.setWindowTitle(self.name)
         self.setGeometry(300, 250, 350, 200)
 
-        # self.text_edit = QtWidgets.QTextEdit(self)
-        self.text_edit = TextEdit(self.wsock)
+        self.text_edit = TextEdit(self.wsock, self.ID)
         # self.text_edit.textChanged.connect(self.on_text_changed)
 
         self.setCentralWidget(self.text_edit)
