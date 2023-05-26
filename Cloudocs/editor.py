@@ -2,7 +2,6 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QApplication, QMenuBar, QMenu, QDialog
 import requests as rq
-import sys
 from Constants import ServerAPI, OpType
 import websockets
 import json
@@ -40,6 +39,7 @@ class TextEdit(QtWidgets.QTextEdit):
         super().__init__()
         self.wsock = wsock
         self.ID = ID
+        self.prev_cursor_position = 0
 
     def getServerEvent(self, op_type: str, length: int, version: int, index: int, text: str):
         # op_type from ServerConstants.OpType
@@ -58,49 +58,62 @@ class TextEdit(QtWidgets.QTextEdit):
             "type": "OPERATION",
             "event": encoded_json_op.decode("utf-8")
         }
+
         return serv_event
 
     def keyPressEvent(self, event):
-        super().keyPressEvent(event)
-
         # Get cursor index
         cursor = self.textCursor()
-        line_number = cursor.blockNumber()
-        position = cursor.position()
-        text_position = 0
+        current_position = cursor.position()
         serv_event = None
 
-        print(f"Курсор находится на позиции {position} в строке номер {line_number}")
+        print(f"Cursor position {current_position}")
 
-        # TODO: Добавить отправку события serv_event по сокету
         if event.key() == Qt.Key_Backspace:
-            selected_text = cursor.selectedText()
-            print(f"Selected: {selected_text}")
+            cursor = self.textCursor()
+            position = current_position
 
-            serv_event = self.getServerEvent(OpType.DELETE, 1, 1, text_position, "\b")
+            if cursor.hasSelection():
+                # Selection to the right
+                if self.prev_cursor_position - current_position < 0:
+                    print("Selection to the right")
+                    selected_text = cursor.selectedText()
+                    position += len(selected_text)
+                # Selection to the left
+                else:
+                    print("Selection to the left")
+
+                print(f"Index: {position}")
+                self.prev_cursor_position = position  # Refresh previous position
+
+            serv_event = self.getServerEvent(OpType.DELETE, 1, 1, position, "\b")
             print("Backspace pressed")
 
         elif event.key() == Qt.Key_Enter:
-            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, text_position, "\n")
+            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, "\n")
             print("Enter pressed")
 
         elif event.key() == Qt.Key_Space:
-            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, text_position, " ")
+            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, " ")
             print("Space pressed")
 
         elif event.key() == Qt.Key_Tab:
-            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, text_position, "\t")
+            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, "\t")
             print("Tab pressed")
 
         else:
             text_key = event.text()
             if text_key:
-                serv_event = self.getServerEvent(OpType.INSERT, 1, 1, text_position, text_key)
-                print(text_key)
+                serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, text_key)
+                print(f"Text: {text_key}")
             else:
                 print(event.key())
 
-        self.wsock.send(json.dumps(serv_event))
+        super().keyPressEvent(event)
+
+        # if self.wsock is not None:
+        #     self.wsock.send(json.dumps(serv_event))
+
 
 class Editor(QtWidgets.QMainWindow):
     new_file = Signal()
