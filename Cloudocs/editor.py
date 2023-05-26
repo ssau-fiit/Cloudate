@@ -64,28 +64,23 @@ class TextEdit(QtWidgets.QTextEdit):
     def keyPressEvent(self, event):
         # Get cursor index
         cursor = self.textCursor()
-        current_position = cursor.position()
+        current_position = cursor.selectionStart()
         serv_event = None
 
-        print(f"Cursor position {current_position}")
+        print(f"Selection start {cursor.selectionStart()}")
+        print(f"Selection end {cursor.selectionEnd()}")
 
         if event.key() == Qt.Key_Backspace:
-            position = current_position
-
             if cursor.hasSelection():
-                # Selection to the right
-                if self.prev_cursor_position - current_position < 0:
-                    print("Selection to the right")
-                    selected_text = cursor.selectedText()
-                    position += len(selected_text)
                 # Selection to the left
-                else:
+                if cursor.position() - cursor.selectionEnd() < 0:
                     print("Selection to the left")
+                    current_position = cursor.selectionEnd()
+                # Selection to the right
+                else:
+                    print("Selection to the right")
 
-                print(f"Index: {position}")
-                self.prev_cursor_position = position  # Refresh previous position
-
-            serv_event = self.getServerEvent(OpType.DELETE, 1, 1, position, "\b")
+            serv_event = self.getServerEvent(OpType.DELETE, 1, 1, current_position, "\b")
             print("Backspace pressed")
 
         elif event.key() == Qt.Key_Enter:
@@ -107,6 +102,8 @@ class TextEdit(QtWidgets.QTextEdit):
                 print(f"Text: {text_key}")
             else:
                 print(event.key())
+
+        print(f"Index sent: {current_position}")
 
         super().keyPressEvent(event)
 
