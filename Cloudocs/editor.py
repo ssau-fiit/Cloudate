@@ -3,9 +3,8 @@ from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QApplication, QMenuBar, QMenu, QDialog
 import requests as rq
 import sys
-from ServerConstants import Server
-from websockets.sync.client import connect
-from string import printable
+from Constants import ServerAPI, OpType
+import websockets
 import json
 import base64
 
@@ -41,22 +40,30 @@ class TextEdit(QtWidgets.QTextEdit):
         super().__init__()
         self.wsock = wsock
 
+    @staticmethod
+    def getServerEvent(op_type: str, length: int, version: int, text: str):
+        # op_type from ServerConstants.OpType
+        operation = {
+            "type": op_type,
+            "len": length,
+            "version": version,
+            "text": text
+        }
+        json_op = json.dumps(operation)
+        encoded_json_op = base64.b64encode(bytes(json_op, 'utf-8'))
+        serv_event = {
+            "type": "OPERATION",
+            "event": encoded_json_op.decode("utf-8")
+        }
+        return serv_event
+
     def keyPressEvent(self, event):
         super().keyPressEvent(event)
 
-        operation = {
-            "type": "INSERT",
-            "len": 1,
-            "version": 1,
-            "text": "p"
-        }
-        data = json.dumps(operation)
-        encoded = base64.b64encode(bytes(data, 'utf-8'))
-        serv_event = {
-            "type": "OPERATION",
-            "event": encoded.decode("utf-8")
-        }
-        self.wsock.send(json.dumps(serv_event))
+        serv_event = self.getServerEvent(OpType.INSERT, 1, 1, "x")
+
+        if self.wsock is not None:
+            self.wsock.send(json.dumps(serv_event))
 
         if event.key() == Qt.Key_Backspace:
             print("Backspace pressed")
@@ -86,8 +93,9 @@ class Editor(QtWidgets.QMainWindow):
         self.ID = ID
         self.wsock = None
 
-        # TODO: add sockets
-        # self.wsock = connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID))
+        self.wsock_url = "ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)
+        self.wsock = websockets.connect(self.wsock_url,
+                                        extra_headers = {"X-Cloudocs-ID": "3"})
 
         self.menuBar = None
         self.filename = None
@@ -130,7 +138,7 @@ class Editor(QtWidgets.QMainWindow):
                 if inputDialog.exec() == 0:
                     # Creating new document
                     doc_name = inputDialog.nameEdit.text()
-                    resp = rq.post(Server.url + Server.createDocument,
+                    resp = rq.post(ServerAPI.url + ServerAPI.createDocument,
                                    json={
                                        "name": doc_name,
                                        "author": "Will Smith"

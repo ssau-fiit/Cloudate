@@ -5,7 +5,7 @@ from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtWidgets import QVBoxLayout
 import requests as rq
 
-from ServerConstants import Server
+from Constants import ServerAPI
 
 from editor import Editor, InputDialog
 
@@ -98,7 +98,7 @@ class DocumentsWindow(QtWidgets.QMainWindow):
         if inputDialog.exec() == 0:
             # Creating new document
             doc_name = inputDialog.nameEdit.text()
-            resp = rq.post(Server.url + Server.createDocument,
+            resp = rq.post(ServerAPI.url + ServerAPI.createDocument,
                            json={
                                "name": doc_name,
                                "author": "Will Smith"
@@ -162,7 +162,7 @@ class DocumentsWindow(QtWidgets.QMainWindow):
 
         try:
             # JSON objects of documents
-            doc_delete = rq.delete(Server.url + Server.getDocument + item.ID)
+            doc_delete = rq.delete(ServerAPI.url + ServerAPI.getDocument + item.ID)
             if doc_delete.status_code != 200:
                 print("Error")
         except Exception as e:
