@@ -71,16 +71,19 @@ class TextEdit(QtWidgets.QTextEdit):
         print(f"Selection end {cursor.selectionEnd()}")
 
         if event.key() == Qt.Key_Backspace:
+            length = 1
             if cursor.hasSelection():
+                length = len(cursor.selectedText())
                 # Selection to the left
                 if cursor.position() - cursor.selectionEnd() < 0:
                     print("Selection to the left")
-                    current_position = cursor.selectionEnd()
+
                 # Selection to the right
                 else:
                     print("Selection to the right")
+                    current_position = cursor.selectionEnd()
 
-            serv_event = self.getServerEvent(OpType.DELETE, 1, 1, current_position, "\b")
+            serv_event = self.getServerEvent(OpType.DELETE, length, 1, current_position, "\b")
             print("Backspace pressed")
 
         elif event.key() == Qt.Key_Enter:
@@ -98,7 +101,7 @@ class TextEdit(QtWidgets.QTextEdit):
         else:
             text_key = event.text()
             if text_key:
-                serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, text_key)
+                serv_event = self.getServerEvent(OpType.INSERT,1 , 1, current_position, text_key)
                 print(f"Text: {text_key}")
             else:
                 print(event.key())
