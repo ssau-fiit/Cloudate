@@ -84,12 +84,10 @@ class Editor(QtWidgets.QMainWindow):
 
         self.name = name
         self.ID = ID
-        self.wsock = connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID))
+        self.wsock = None
 
-        # with connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)) as websocket:
-        #     websocket.send("Hello world!")
-        # message = websocket.recv()
-        # print(f"Received: {message}")
+        # TODO: add sockets
+        # self.wsock = connect("ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID))
 
         self.menuBar = None
         self.filename = None
@@ -102,10 +100,6 @@ class Editor(QtWidgets.QMainWindow):
         # self.text_edit.textChanged.connect(self.on_text_changed)
 
         self.setCentralWidget(self.text_edit)
-
-        # # Создаем горячую клавишу для нажатия клавиши backspace
-        # shortcut = QtGui.QShortcut(QtGui.QKeySequence("Backspace"), self.text_edit)
-        # shortcut.activated.connect(self.on_backspace_pressed)
 
         # Get text from server
         resp = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(ID))
