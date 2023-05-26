@@ -70,7 +70,6 @@ class TextEdit(QtWidgets.QTextEdit):
         print(f"Cursor position {current_position}")
 
         if event.key() == Qt.Key_Backspace:
-            cursor = self.textCursor()
             position = current_position
 
             if cursor.hasSelection():
