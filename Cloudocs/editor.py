@@ -40,8 +40,7 @@ class TextEdit(QtWidgets.QTextEdit):
         super().__init__()
         self.wsock = wsock
 
-    @staticmethod
-    def getServerEvent(op_type: str, length: int, version: int, text: str):
+    def getServerEvent(self, op_type: str, length: int, version: int, text: str):
         # op_type from ServerConstants.OpType
         operation = {
             "type": op_type,
@@ -66,18 +65,21 @@ class TextEdit(QtWidgets.QTextEdit):
             self.wsock.send(json.dumps(serv_event))
 
         if event.key() == Qt.Key_Backspace:
+            serv_event = self.getServerEvent(OpType.DELETE, 1, 1, "\b")
             print("Backspace pressed")
         elif event.key() == Qt.Key_Enter:
+            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, "\n")
             print("Enter pressed")
         elif event.key() == Qt.Key_Space:
+            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, " ")
             print("Space pressed")
         elif event.key() == Qt.Key_Tab:
+            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, "\t")
             print("Tab pressed")
-        elif event.key() == Qt.Key_Escape:
-            print("Escape pressed")
         else:
             text_key = event.text()
             if text_key:
+                serv_event = self.getServerEvent(OpType.INSERT, len(text_key), 1, text_key)
                 print(text_key)
             else:
                 print(event.key())
@@ -95,7 +97,7 @@ class Editor(QtWidgets.QMainWindow):
 
         self.wsock_url = "ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)
         self.wsock = websockets.connect(self.wsock_url,
-                                        extra_headers = {"X-Cloudocs-ID": "3"})
+                                        extra_headers={"X-Cloudocs-ID": "3"})
 
         self.menuBar = None
         self.filename = None
