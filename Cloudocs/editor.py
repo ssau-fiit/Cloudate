@@ -6,6 +6,7 @@ from Constants import ServerAPI, OpType
 import websockets
 import json
 import base64
+import asyncio
 
 
 class InputDialog(QDialog):
@@ -67,45 +68,48 @@ class TextEdit(QtWidgets.QTextEdit):
         current_position = cursor.selectionStart()
         serv_event = None
 
-        print(f"Selection start {cursor.selectionStart()}")
-        print(f"Selection end {cursor.selectionEnd()}")
+        # print(f"Selection start {cursor.selectionStart()}")
+        # print(f"Selection end {cursor.selectionEnd()}")
 
         if event.key() == Qt.Key_Backspace:
             if cursor.hasSelection():
                 # Selection to the left
                 if cursor.position() - cursor.selectionEnd() < 0:
-                    print("Selection to the left")
+                    # print("Selection to the left")
                     current_position = cursor.selectionEnd()
                 # Selection to the right
                 else:
-                    print("Selection to the right")
+                    # print("Selection to the right")
+                    pass
 
             serv_event = self.getServerEvent(OpType.DELETE, 1, 1, current_position, "\b")
-            print("Backspace pressed")
+            # print("Backspace pressed")
 
         elif event.key() == Qt.Key_Enter:
             serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, "\n")
-            print("Enter pressed")
+            # print("Enter pressed")
 
         elif event.key() == Qt.Key_Space:
             serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, " ")
-            print("Space pressed")
+            # print("Space pressed")
 
         elif event.key() == Qt.Key_Tab:
             serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, "\t")
-            print("Tab pressed")
+            # print("Tab pressed")
 
         else:
             text_key = event.text()
             if text_key:
                 serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, text_key)
-                print(f"Text: {text_key}")
+                # print(f"Text: {text_key}")
             else:
-                print(event.key())
+                # print(event.key())
+                pass
 
-        print(f"Index sent: {current_position}")
+        # print(f"Index sent: {current_position}")
 
         super().keyPressEvent(event)
+        print("Event: ", serv_event)
 
         # if self.wsock is not None:
         #     self.wsock.send(json.dumps(serv_event))
@@ -122,8 +126,11 @@ class Editor(QtWidgets.QMainWindow):
         self.wsock = None
 
         self.wsock_url = "ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)
-        self.wsock = websockets.connect(self.wsock_url,
-                                        extra_headers={"X-Cloudocs-ID": "3"})
+        # self.wsock = websockets.connect(self.wsock_url,
+        #                                 extra_headers={"X-Cloudocs-ID": "3"})
+        self.wsock = None
+        asyncio.get_event_loop().run_until_complete(self.listen())
+
 
         self.menuBar = None
         self.filename = None
@@ -137,13 +144,46 @@ class Editor(QtWidgets.QMainWindow):
         self.setCentralWidget(self.text_edit)
 
         # Get text from server
-        resp = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(ID))
-
-        if resp.status_code == 200:
-            doc_text = resp.json()["text"]
-            self.text_edit.setText(doc_text)
+        # resp = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(ID))
+        #
+        # if resp.status_code == 200:
+        #     doc_text = resp.json()["text"]
+        #     self.text_edit.setText(doc_text)
 
         self.createMenuBar()
+
+    async def on_message(self, message):
+        # This function is called everytime a new message is received from the server
+        data = json.loads(message)
+        print(f"Received message: {data}")
+        decoded_string = base64.b64decode(data["event"]).decode('utf-8')
+        print(decoded_string)
+
+
+    async def on_error(self, error):
+        # This function is called when an error occurs
+        print(f"Error: {error}")
+
+    async def on_close(self):
+        # This function is called when the WebSocket connection is closed
+        print("Connection closed")
+
+    async def on_open(self):
+        # This function is called when the WebSocket connection is opened
+        print("Connection opened")
+        # Send a message to the server
+        message = {"type": "hello"}
+        await self.wsock.send(json.dumps(message))
+
+    async def listen(self):
+        # Create a WebSocket connection
+        async with websockets.connect(self.wsock_url, extra_headers={"X-Cloudocs-ID": "3"}) as ws:
+            self.wsock = ws
+            # Call on_open() after the connection is opened
+            await self.on_open()
+            async for message in ws:
+                # Call on_message() for each message received from the server
+                await self.on_message(message)
 
     def createMenuBar(self):
         self.menuBar = QMenuBar()
