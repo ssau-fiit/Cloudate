@@ -164,6 +164,7 @@ class Editor(QtWidgets.QMainWindow):
         # This function is called when an error occurs
         print(f"Error: {error}")
 
+
     async def on_close(self):
         # This function is called when the WebSocket connection is closed
         print("Connection closed")
