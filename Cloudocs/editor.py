@@ -1,3 +1,5 @@
+from threading import Thread
+
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import QApplication, QMenuBar, QMenu, QDialog
@@ -129,6 +131,10 @@ class Editor(QtWidgets.QMainWindow):
         # self.wsock = websockets.connect(self.wsock_url,
         #                                 extra_headers={"X-Cloudocs-ID": "3"})
         self.wsock = None
+
+        # thread = Thread(target=asyncio.get_event_loop().run_until_complete(self.listen()), args=(10, ))
+        # thread.start()
+
         asyncio.get_event_loop().run_until_complete(self.listen())
 
 
@@ -174,7 +180,7 @@ class Editor(QtWidgets.QMainWindow):
         print("Connection opened")
         # Send a message to the server
         message = {"type": "hello"}
-        await self.wsock.send(json.dumps(message))
+        # await self.wsock.send(json.dumps(message))
 
     async def listen(self):
         # Create a WebSocket connection
@@ -185,6 +191,7 @@ class Editor(QtWidgets.QMainWindow):
             async for message in ws:
                 # Call on_message() for each message received from the server
                 await self.on_message(message)
+                # break
 
     def createMenuBar(self):
         self.menuBar = QMenuBar()
