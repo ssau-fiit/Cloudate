@@ -11,31 +11,6 @@ import base64
 import asyncio
 
 
-class WebSocketThread(QThread):
-    def __init__(self, editor):
-        super().__init__()
-        self.editor = editor
-
-    def run(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.listen())
-
-    async def on_message(self, message):
-        # This function is called everytime a new message is received from the server
-        self.editor.srvMsgChannel.emit(message)
-
-    async def listen(self):
-        # Create a WebSocket connection
-        async with websockets.connect(self.editor.wsock_url, extra_headers={"X-Cloudocs-ID": "3"}) as ws:
-            self.editor.wsock = ws
-            # Call on_open() after the connection is opened
-            async for message in ws:
-                # Call on_message() for each message received from the server
-                await self.on_message(message)
-                # break
-
-
 class InputDialog(QDialog):
     def __init__(self):
         super().__init__()
@@ -62,6 +37,32 @@ class InputDialog(QDialog):
         self.close()
 
 
+class WebSocketThread(QThread):
+    srvMsgChannel = Signal(str)
+
+    def __init__(self, text_edit):
+        super().__init__()
+        self.text_edit = text_edit
+
+    def run(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.listen())
+
+    async def on_message(self, message):
+        # This function is called everytime a new message is received from the server
+        self.srvMsgChannel.emit(message)
+
+    async def listen(self):
+        # Create a WebSocket connection
+        async with websockets.connect(self.text_edit.wsock_url, extra_headers={"X-Cloudocs-ID": "3"}) as ws:
+            self.text_edit.wsock = ws
+            # Call on_open() after the connection is opened
+            async for message in ws:
+                # Call on_message() for each message received from the server
+                await self.on_message(message)
+
+
 class TextEdit(QtWidgets.QTextEdit):
     def __init__(self, editor, ID: int):
         super().__init__()
@@ -69,6 +70,15 @@ class TextEdit(QtWidgets.QTextEdit):
         self.prev_cursor_position = 0
         self.editor = editor
         self.last_ver = 1
+
+        # Creating websocket (will be initialized in webSocketThread)
+        self.wsock_url = "ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)
+        self.wsock = None
+
+        # Creating separate thread for socket listener
+        self.webSocketThread = WebSocketThread(self)
+        self.webSocketThread.srvMsgChannel.connect(self.msgsHandler)
+        self.webSocketThread.start()
 
     def getServerEvent(self, op_type: str, length: int, index: int, text: str):
         # op_type from ServerConstants.OpType
@@ -137,27 +147,37 @@ class TextEdit(QtWidgets.QTextEdit):
 
         # print(f"Index sent: {current_position}")
 
-        super().keyPressEvent(event)
-        asyncio.run(self.editor.wsock.send(json.dumps(serv_event)))
+        asyncio.run(self.wsock.send(json.dumps(serv_event)))
         print("Event: ", serv_event)
+        super().keyPressEvent(event)
 
-        # if self.wsock is not None:
-        #     self.wsock.send(json.dumps(serv_event))
+    @QtCore.Slot(str)
+    def msgsHandler(self, text: str):
+        data = json.loads(text)
+        print(f"Received message: {data}")
+        decoded_string = base64.b64decode(data["event"]).decode('utf-8')
+
+        # if type is present in data, then it is not first message
+        if 'type' in data:
+            json_data = json.loads(decoded_string)
+            if "lastVersion" in json_data:
+                last_ver = json_data["lastVersion"]
+                self.last_ver = last_ver
+                print("received last version is", last_ver)
+        else:
+            self.setFontFamily("SF Pro Display")
+            json_data = json.loads(decoded_string)
+            self.setText(json_data["text"])
 
 
 class Editor(QtWidgets.QMainWindow):
     new_file = Signal()
-    srvMsgChannel = Signal(str)
-    clientMsgChannel = Signal(str)
 
     def __init__(self, name: str, ID: int):
         super().__init__()
 
         self.name = name
         self.ID = ID
-
-        self.wsock_url = "ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)
-        self.wsock = None
 
         self.menuBar = None
         self.filename = None
@@ -171,35 +191,6 @@ class Editor(QtWidgets.QMainWindow):
         self.setCentralWidget(self.text_edit)
 
         self.createMenuBar()
-
-        # Creating separate thread for socket listener
-        self.webSocketThread = WebSocketThread(self)
-        self.webSocketThread.start()
-
-        self.srvMsgChannel.connect(self.msgsHandler)
-
-    @QtCore.Slot(str)
-    def msgsHandler(self, text: str):
-        data = json.loads(text)
-        print(f"Received message: {data}")
-        decoded_string = base64.b64decode(data["event"]).decode('utf-8')
-
-        # if type is present in data, then it is not first message
-        if 'type' in data:
-            json_data = json.loads(decoded_string)
-            if "lastVersion" in json_data:
-                last_ver = json_data["lastVersion"]
-                self.text_edit.last_ver = last_ver
-                print("received last version is", last_ver)
-        else:
-            self.text_edit.setFontFamily("SF Pro Display")
-            json_data = json.loads(decoded_string)
-            self.text_edit.setText(json_data["text"])
-
-    def handleEvent(self, event):
-        if event["type"] == "OPERATION":
-            print("operation received", event)
-            # Здесь обрабатываем операции
 
     def createMenuBar(self):
         self.menuBar = QMenuBar()
@@ -260,8 +251,5 @@ class Editor(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.critical(self,
                                                "Sending text error", f"Status code: {resp.status_code}")
 
-    def on_text_changed(self):
-        cursor = self.text_edit.textCursor()
-        position = cursor.position()
-        line_number = cursor.blockNumber()
-        print(f"Курсор находится на позиции {position} в строке номер {line_number}")
+    def closeEvent(self, event):
+        self.text_edit.webSocketThread.terminate()
