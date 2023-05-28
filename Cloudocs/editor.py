@@ -10,6 +10,7 @@ import json
 import base64
 import asyncio
 
+
 class WebSocketThread(QThread):
     def __init__(self, editor):
         super().__init__()
@@ -18,7 +19,22 @@ class WebSocketThread(QThread):
     def run(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.editor.listen())
+        loop.run_until_complete(self.listen())
+
+    async def on_message(self, message):
+        # This function is called everytime a new message is received from the server
+        self.editor.srvMsgChannel.emit(message)
+
+    async def listen(self):
+        # Create a WebSocket connection
+        async with websockets.connect(self.editor.wsock_url, extra_headers={"X-Cloudocs-ID": "3"}) as ws:
+            self.editor.wsock = ws
+            # Call on_open() after the connection is opened
+            async for message in ws:
+                # Call on_message() for each message received from the server
+                await self.on_message(message)
+                # break
+
 
 class InputDialog(QDialog):
     def __init__(self):
@@ -47,11 +63,12 @@ class InputDialog(QDialog):
 
 
 class TextEdit(QtWidgets.QTextEdit):
-    def __init__(self, wsock, ID: int):
+    def __init__(self, editor, wsock, ID: int):
         super().__init__()
         self.wsock = wsock
         self.ID = ID
         self.prev_cursor_position = 0
+        self.editor = editor
 
     def getServerEvent(self, op_type: str, length: int, version: int, index: int, text: str):
         # op_type from ServerConstants.OpType
@@ -120,6 +137,7 @@ class TextEdit(QtWidgets.QTextEdit):
         # print(f"Index sent: {current_position}")
 
         super().keyPressEvent(event)
+        asyncio.run(self.wsock.send(json.dumps(serv_event)))
         print("Event: ", serv_event)
 
         # if self.wsock is not None:
@@ -128,30 +146,17 @@ class TextEdit(QtWidgets.QTextEdit):
 
 class Editor(QtWidgets.QMainWindow):
     new_file = Signal()
+    srvMsgChannel = Signal(str)
+    clientMsgChannel = Signal(str)
 
     def __init__(self, name: str, ID: int):
         super().__init__()
 
         self.name = name
         self.ID = ID
-        self.wsock = None
 
         self.wsock_url = "ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)
-        # self.wsock = websockets.connect(self.wsock_url,
-        #                                 extra_headers={"X-Cloudocs-ID": "3"})
         self.wsock = None
-
-        # thread = threading.Thread(target=self.listen())
-        # thread.start()
-
-        self.webSocketThread = WebSocketThread(self)
-        self.webSocketThread.start()
-
-        # asyncio.get_event_loop().run_until_complete(self.listen())
-        # async def test():
-        #     asyncio.create_task(self.listen())
-        #
-        # asyncio.run(test())
 
         self.menuBar = None
         self.filename = None
@@ -159,62 +164,36 @@ class Editor(QtWidgets.QMainWindow):
         self.setWindowTitle(self.name)
         self.setGeometry(300, 250, 350, 200)
 
-        self.text_edit = TextEdit(self.wsock, self.ID)
-        # self.text_edit.textChanged.connect(self.on_text_changed)
+        self.text_edit = TextEdit(self.wsock, self, self.ID)
+        self.text_edit.setTextColor("black")
 
         self.setCentralWidget(self.text_edit)
 
-        # Get text from server
-        # resp = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(ID))
-        #
-        # if resp.status_code == 200:
-        #     doc_text = resp.json()["text"]
-        #     self.text_edit.setText(doc_text)
-
         self.createMenuBar()
-    async def setupwesoket(self,loop):
-        asyncio.set_event_loop(loop)
-        task = loop.create_task(self.listen())
-        await task
-    async def on_message(self, message):
 
-        # This function is called everytime a new message is received from the server
-        data = json.loads(message)
+        # Creating separate thread for socket listener
+        self.webSocketThread = WebSocketThread(self)
+        self.webSocketThread.start()
+
+        self.srvMsgChannel.connect(self.msgsHandler)
+
+    @QtCore.Slot(str)
+    def msgsHandler(self, text: str):
+        data = json.loads(text)
         print(f"Received message: {data}")
         decoded_string = base64.b64decode(data["event"]).decode('utf-8')
-        print(decoded_string)
-        with open('file.txt', 'w') as f:
-            f.write(decoded_string)
 
+        # if type is present in data, then it is not first message
+        if 'type' in data:
+            print(decoded_string)
+        else:
+            self.text_edit.setFontFamily("SF Pro Display")
+            self.text_edit.setText(json.loads(decoded_string)["text"])
 
-
-
-    async def on_error(self, error):
-        # This function is called when an error occurs
-        print(f"Error: {error}")
-
-
-    async def on_close(self):
-        # This function is called when the WebSocket connection is closed
-        print("Connection closed")
-
-    async def on_open(self):
-        # This function is called when the WebSocket connection is opened
-        print("Connection opened")
-        # Send a message to the server
-        message = {"type": "hello"}
-        # await self.wsock.send(json.dumps(message))
-
-    async def listen(self):
-        # Create a WebSocket connection
-        async with websockets.connect(self.wsock_url, extra_headers={"X-Cloudocs-ID": "3"}) as ws:
-            self.wsock = ws
-            # Call on_open() after the connection is opened
-            await self.on_open()
-            async for message in ws:
-                # Call on_message() for each message received from the server
-                await self.on_message(message)
-                # break
+    def handleEvent(self, event):
+        if event["type"] == "OPERATION":
+            print("operation received", event)
+            # Здесь обрабатываем операции
 
     def createMenuBar(self):
         self.menuBar = QMenuBar()
