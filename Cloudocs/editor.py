@@ -68,8 +68,9 @@ class TextEdit(QtWidgets.QTextEdit):
         self.ID = ID
         self.prev_cursor_position = 0
         self.editor = editor
+        self.last_ver = 0
 
-    def getServerEvent(self, op_type: str, length: int, version: int, index: int, text: str):
+    def getServerEvent(self, op_type: str, length: int, index: int, text: str):
         # op_type from ServerConstants.OpType
 
         operation = {
@@ -77,7 +78,7 @@ class TextEdit(QtWidgets.QTextEdit):
             "type": op_type,
             "len": length,
             "index": index,
-            "version": version,
+            "version": self.last_ver + 1,
             "text": text
         }
         json_op = json.dumps(operation)
@@ -109,25 +110,25 @@ class TextEdit(QtWidgets.QTextEdit):
                     # print("Selection to the right")
                     pass
 
-            serv_event = self.getServerEvent(OpType.DELETE, 1, 1, current_position, "\b")
+            serv_event = self.getServerEvent(OpType.DELETE, 1, current_position, "\b")
             # print("Backspace pressed")
 
         elif event.key() == Qt.Key_Enter:
-            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, "\n")
+            serv_event = self.getServerEvent(OpType.INSERT, 1, current_position, "\n")
             # print("Enter pressed")
 
         elif event.key() == Qt.Key_Space:
-            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, " ")
+            serv_event = self.getServerEvent(OpType.INSERT, 1, current_position, " ")
             # print("Space pressed")
 
         elif event.key() == Qt.Key_Tab:
-            serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, "\t")
+            serv_event = self.getServerEvent(OpType.INSERT, 1, current_position, "\t")
             # print("Tab pressed")
 
         else:
             text_key = event.text()
             if text_key:
-                serv_event = self.getServerEvent(OpType.INSERT, 1, 1, current_position, text_key)
+                serv_event = self.getServerEvent(OpType.INSERT, 1, current_position, text_key)
                 # print(f"Text: {text_key}")
             else:
                 # print(event.key())
@@ -187,7 +188,12 @@ class Editor(QtWidgets.QMainWindow):
             print(decoded_string)
         else:
             self.text_edit.setFontFamily("SF Pro Display")
-            self.text_edit.setText(json.loads(decoded_string)["text"])
+            json_data = json.loads(decoded_string)
+            self.text_edit.setText(json_data["text"])
+
+            if "lastVersion" in json_data:
+                last_ver = json_data["lastVersion"]
+                self.text_edit.last_ver = last_ver
 
     def handleEvent(self, event):
         if event["type"] == "OPERATION":
