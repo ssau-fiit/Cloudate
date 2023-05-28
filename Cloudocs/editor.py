@@ -1,5 +1,4 @@
-import threading
-from threading import Thread
+from PySide6.QtCore import QThread
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Signal, Qt
@@ -11,6 +10,15 @@ import json
 import base64
 import asyncio
 
+class WebSocketThread(QThread):
+    def __init__(self, editor):
+        super().__init__()
+        self.editor = editor
+
+    def run(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.editor.listen())
 
 class InputDialog(QDialog):
     def __init__(self):
@@ -136,16 +144,14 @@ class Editor(QtWidgets.QMainWindow):
         # thread = threading.Thread(target=self.listen())
         # thread.start()
 
-
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(self.setupwesoket(loop))
+        self.webSocketThread = WebSocketThread(self)
+        self.webSocketThread.start()
 
         # asyncio.get_event_loop().run_until_complete(self.listen())
         # async def test():
         #     asyncio.create_task(self.listen())
         #
         # asyncio.run(test())
-
 
         self.menuBar = None
         self.filename = None
