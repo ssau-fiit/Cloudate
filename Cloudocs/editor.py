@@ -1,3 +1,4 @@
+import threading
 from threading import Thread
 
 from PySide6 import QtWidgets, QtGui, QtCore
@@ -132,10 +133,18 @@ class Editor(QtWidgets.QMainWindow):
         #                                 extra_headers={"X-Cloudocs-ID": "3"})
         self.wsock = None
 
-        # thread = Thread(target=asyncio.get_event_loop().run_until_complete(self.listen()), args=(10, ))
+        # thread = threading.Thread(target=self.listen())
         # thread.start()
 
-        asyncio.get_event_loop().run_until_complete(self.listen())
+
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.setupwesoket(loop))
+
+        # asyncio.get_event_loop().run_until_complete(self.listen())
+        # async def test():
+        #     asyncio.create_task(self.listen())
+        #
+        # asyncio.run(test())
 
 
         self.menuBar = None
@@ -157,13 +166,21 @@ class Editor(QtWidgets.QMainWindow):
         #     self.text_edit.setText(doc_text)
 
         self.createMenuBar()
-
+    async def setupwesoket(self,loop):
+        asyncio.set_event_loop(loop)
+        task = loop.create_task(self.listen())
+        await task
     async def on_message(self, message):
+
         # This function is called everytime a new message is received from the server
         data = json.loads(message)
         print(f"Received message: {data}")
         decoded_string = base64.b64decode(data["event"]).decode('utf-8')
         print(decoded_string)
+        with open('file.txt', 'w') as f:
+            f.write(decoded_string)
+
+
 
 
     async def on_error(self, error):

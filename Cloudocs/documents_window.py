@@ -1,3 +1,4 @@
+import asyncio
 import sys
 
 
@@ -151,6 +152,10 @@ class DocumentsWindow(QtWidgets.QMainWindow):
     def filenameClicked(self, item):
         print(f"Filename: {item.name}")
         self.editor_win = Editor(item.name, item.ID)
+        # async def test():
+        #     asyncio.create_task(self.editor_win.show())
+        #
+        # asyncio.run(test())
         self.editor_win.show()
 
     def deleteDocument(self):
