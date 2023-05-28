@@ -63,9 +63,8 @@ class InputDialog(QDialog):
 
 
 class TextEdit(QtWidgets.QTextEdit):
-    def __init__(self, editor, wsock, ID: int):
+    def __init__(self, editor, ID: int):
         super().__init__()
-        self.wsock = wsock
         self.ID = ID
         self.prev_cursor_position = 0
         self.editor = editor
@@ -137,7 +136,7 @@ class TextEdit(QtWidgets.QTextEdit):
         # print(f"Index sent: {current_position}")
 
         super().keyPressEvent(event)
-        asyncio.run(self.wsock.send(json.dumps(serv_event)))
+        asyncio.run(self.editor.wsock.send(json.dumps(serv_event)))
         print("Event: ", serv_event)
 
         # if self.wsock is not None:
@@ -164,7 +163,7 @@ class Editor(QtWidgets.QMainWindow):
         self.setWindowTitle(self.name)
         self.setGeometry(300, 250, 350, 200)
 
-        self.text_edit = TextEdit(self.wsock, self, self.ID)
+        self.text_edit = TextEdit(self, self.ID)
         self.text_edit.setTextColor("black")
 
         self.setCentralWidget(self.text_edit)
