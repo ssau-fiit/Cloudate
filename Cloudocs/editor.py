@@ -68,17 +68,18 @@ class TextEdit(QtWidgets.QTextEdit):
         self.ID = ID
         self.prev_cursor_position = 0
         self.editor = editor
-        self.last_ver = 0
+        self.last_ver = 1
 
     def getServerEvent(self, op_type: str, length: int, index: int, text: str):
         # op_type from ServerConstants.OpType
 
+        self.last_ver += 1
         operation = {
             "userID": self.ID,
             "type": op_type,
             "len": length,
             "index": index,
-            "version": self.last_ver + 1,
+            "version": self.last_ver,
             "text": text
         }
         json_op = json.dumps(operation)
@@ -185,15 +186,15 @@ class Editor(QtWidgets.QMainWindow):
 
         # if type is present in data, then it is not first message
         if 'type' in data:
-            print(decoded_string)
+            json_data = json.loads(decoded_string)
+            if "lastVersion" in json_data:
+                last_ver = json_data["lastVersion"]
+                self.text_edit.last_ver = last_ver
+                print("received last version is", last_ver)
         else:
             self.text_edit.setFontFamily("SF Pro Display")
             json_data = json.loads(decoded_string)
             self.text_edit.setText(json_data["text"])
-
-            if "lastVersion" in json_data:
-                last_ver = json_data["lastVersion"]
-                self.text_edit.last_ver = last_ver
 
     def handleEvent(self, event):
         if event["type"] == "OPERATION":
