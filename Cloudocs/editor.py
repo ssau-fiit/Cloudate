@@ -198,11 +198,12 @@ class TextEdit(QtWidgets.QTextEdit):
 
                 cursor = self.textCursor()
                 prev_pos = cursor.position()
+                print(prev_pos)
 
                 self.setText(new_text)
 
-                # cursor.setPosition(prev_pos)
-                cursor.setPosition(prev_pos, QTextCursor.MoveAnchor)
+                cursor.setPosition(prev_pos)
+                # cursor.setPosition(prev_pos, QTextCursor.MoveAnchor)
         else:
             self.setFontFamily("SF Pro Display")
             json_data = json.loads(decoded_string)
