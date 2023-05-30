@@ -131,7 +131,7 @@ class TextEdit(QtWidgets.QTextEdit):
 
             serv_event = self.getServerEvent(OpType.DELETE,
                                              cursor.selectionEnd() - cursor.selectionStart(),
-                                             current_position - 1,
+                                             cursor.selectionEnd() - 1,
                                              "\b")
             # print("Backspace pressed")
 
@@ -167,14 +167,15 @@ class TextEdit(QtWidgets.QTextEdit):
         data = json.loads(text)
         decoded_string = base64.b64decode(data["event"]).decode('utf-8')
         json_data = json.loads(decoded_string)
-
+        len = 1
         print("Json data:", json_data)
 
         if "lastVersion" in json_data:
             last_ver = json_data["lastVersion"]
             self.last_ver = last_ver
             print("received last version is", last_ver)
-
+        if "len" in json_data:
+            len = json_data["len"]
         # if type is present in data, then it is not first message
         if 'type' in data:
             if "text" in json_data:
@@ -191,7 +192,7 @@ class TextEdit(QtWidgets.QTextEdit):
                     new_text = current_text[:index] + json_data["text"] + current_text[index:]
                 # Delete
                 else:
-                    new_text = current_text[:index] + current_text[index+json_data["len"]:]
+                    new_text = current_text[:index+len] + current_text[index:]
                 self.setText(new_text)
 
         else:
