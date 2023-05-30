@@ -169,14 +169,18 @@ class TextEdit(QtWidgets.QTextEdit):
                 self.last_ver = last_ver
                 print("received last version is", last_ver)
 
-            # Обработка приходящих операций
-            if "type" == "INSERT":
+            if "text" in json_data:
+                # Обработка приходящих операций
+                print("Json data:", json_data)
                 index = json_data["index"]
                 current_text = self.toPlainText()
-                new_text = current_text[:index] + json_data["text"] + current_text[index:]
+                new_text = ""
+                if "type" == "INSERT":
+                    new_text = current_text[:index] + json_data["text"] + current_text[index:]
+                elif "type" == "DELETE":
+                    new_text = current_text[:index] + current_text[index+1:]
+
                 self.setText(new_text)
-            elif "type" == "DELETE":
-                pass
 
         else:
             self.setFontFamily("SF Pro Display")
