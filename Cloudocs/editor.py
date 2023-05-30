@@ -56,7 +56,8 @@ class WebSocketThread(QThread):
 
     async def listen(self):
         # Create a WebSocket connection
-        async with websockets.connect(self.text_edit.wsock_url, extra_headers={"X-Cloudocs-ID": "3"}) as ws:
+        async with websockets.connect(self.text_edit.wsock_url,
+                                      extra_headers={"X-Cloudocs-ID": str(self.text_edit.ID)}) as ws:
             self.text_edit.wsock = ws
             # Call on_open() after the connection is opened
             async for message in ws:
