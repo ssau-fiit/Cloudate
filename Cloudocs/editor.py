@@ -201,7 +201,7 @@ class TextEdit(QtWidgets.QTextEdit):
 
                 self.setText(new_text)
 
-                cursor.movePosition(index, QTextCursor.NextCharacter)
+                cursor.setPosition(prev_pos)
 
         else:
             self.setFontFamily("SF Pro Display")
