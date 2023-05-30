@@ -164,25 +164,28 @@ class TextEdit(QtWidgets.QTextEdit):
 
         print("Json data:", json_data)
 
+        if "lastVersion" in json_data:
+            last_ver = json_data["lastVersion"]
+            self.last_ver = last_ver
+            print("received last version is", last_ver)
+
         # if type is present in data, then it is not first message
         if 'type' in data:
-            if "lastVersion" in json_data:
-                last_ver = json_data["lastVersion"]
-                self.last_ver = last_ver
-                # print("received last version is", last_ver)
 
             if "text" in json_data:
-                pass
-                # Обработка приходящих операций
-                # index = json_data["index"]
-                # current_text = self.toPlainText()
-                # new_text = ""
-                # if "type" == "INSERT":
-                #     new_text = current_text[:index] + json_data["text"] + current_text[index:]
-                # elif "type" == "DELETE":
-                #     new_text = current_text[:index] + current_text[index+1:]
 
-                # self.setText(new_text)
+                # Обработка приходящих операций
+                index = json_data["index"]
+                current_text = self.toPlainText()
+                new_text = ""
+                # Insert
+                if "type" not in json_data:
+                    new_text = current_text[:index] + json_data["text"] + current_text[index:]
+                # Delete
+                else:
+                    new_text = current_text[:index] + current_text[index+1:]
+                print(new_text)
+                self.setText(new_text)
 
         else:
             self.setFontFamily("SF Pro Display")
