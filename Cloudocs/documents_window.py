@@ -151,11 +151,7 @@ class DocumentsWindow(QtWidgets.QMainWindow):
 
     def filenameClicked(self, item):
         print(f"Filename: {item.name}")
-        self.editor_win = Editor(item.name, item.ID)
-        # async def test():
-        #     asyncio.create_task(self.editor_win.show())
-        #
-        # asyncio.run(test())
+        self.editor_win = Editor(item.name, item.ID, self.user_id)
         self.editor_win.show()
 
     def deleteDocument(self):
@@ -172,9 +168,6 @@ class DocumentsWindow(QtWidgets.QMainWindow):
                 print("Error")
         except Exception as e:
             print(e)
-
-
-
 
 
 if __name__ == "__main__":

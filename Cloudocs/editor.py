@@ -57,7 +57,7 @@ class WebSocketThread(QThread):
     async def listen(self):
         # Create a WebSocket connection
         async with websockets.connect(self.text_edit.wsock_url,
-                                      extra_headers={"X-Cloudocs-ID": str(self.text_edit.ID)}) as ws:
+                                      extra_headers={"X-Cloudocs-ID": str(self.text_edit.user_id)}) as ws:
             self.text_edit.wsock = ws
             # Call on_open() after the connection is opened
             async for message in ws:
@@ -68,15 +68,16 @@ class WebSocketThread(QThread):
 class TextEdit(QtWidgets.QTextEdit):
     userPress = Signal(QtGui.QKeyEvent)
 
-    def __init__(self, editor, ID: int):
+    def __init__(self, editor, file_id: int, user_id: int):
         super().__init__()
-        self.ID = ID
+        self.file_id = file_id
+        self.user_id = user_id
         self.prev_cursor_position = 0
         self.editor = editor
         self.last_ver = 1
 
         # Creating websocket (will be initialized in webSocketThread)
-        self.wsock_url = f"ws://{ServerAPI.host}:{ServerAPI.port}/api/v1/documents/" + str(self.ID)
+        self.wsock_url = f"ws://{ServerAPI.host}:{ServerAPI.port}/api/v1/documents/" + str(self.file_id)
         self.wsock = None
 
         # Creating separate thread for socket listener
@@ -89,7 +90,7 @@ class TextEdit(QtWidgets.QTextEdit):
 
         self.last_ver += 1
         operation = {
-            "userID": self.ID,
+            "userID": self.user_id,
             "type": op_type,
             "len": length,
             "index": index,
@@ -192,11 +193,12 @@ class TextEdit(QtWidgets.QTextEdit):
 class Editor(QtWidgets.QMainWindow):
     new_file = Signal()
 
-    def __init__(self, name: str, ID: int):
+    def __init__(self, name: str, file_id: int, user_id: int):
         super().__init__()
 
         self.name = name
-        self.ID = ID
+        self.file_id = file_id
+        self.user_id = user_id
 
         self.menuBar = None
         self.filename = None
@@ -204,7 +206,7 @@ class Editor(QtWidgets.QMainWindow):
         self.setWindowTitle(self.name)
         self.setGeometry(300, 250, 350, 200)
 
-        self.text_edit = TextEdit(self, self.ID)
+        self.text_edit = TextEdit(self, self.file_id, self.user_id)
         self.text_edit.setTextColor("black")
 
         self.setCentralWidget(self.text_edit)
