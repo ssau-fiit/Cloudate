@@ -2,6 +2,7 @@ from PySide6.QtCore import QThread
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QApplication, QMenuBar, QMenu, QDialog
 import requests as rq
 from Constants import ServerAPI, OpType
@@ -185,6 +186,7 @@ class TextEdit(QtWidgets.QTextEdit):
                 index = 0
                 if "index" in json_data:
                     index = json_data["index"]
+
                 current_text = self.toPlainText()
                 new_text = ""
                 # Insert
@@ -192,9 +194,14 @@ class TextEdit(QtWidgets.QTextEdit):
                     new_text = current_text[:index] + json_data["text"] + current_text[index:]
                 # Delete
                 else:
-                    new_text = current_text[:index - length + 1] + current_text[index:]
-                    # 0123456789
+                    new_text = current_text[:index - length + 1] + current_text[index + 1:]
+
+                cursor = self.textCursor()
+                prev_pos = cursor.position()
+
                 self.setText(new_text)
+
+                cursor.movePosition(index, QTextCursor.NextCharacter)
 
         else:
             self.setFontFamily("SF Pro Display")
