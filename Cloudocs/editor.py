@@ -176,6 +176,8 @@ class TextEdit(QtWidgets.QTextEdit):
         if 'type' in data:
             if "text" in json_data:
                 # Обработка приходящих операций
+                self.last_ver = json_data["version"]
+
                 index = 0
                 if "index" in json_data:
                     index = json_data["index"]
