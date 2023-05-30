@@ -51,12 +51,17 @@ class DocumentsWindow(QtWidgets.QMainWindow):
         self.deleteButton.clicked.connect(self.deleteDocument)
         self.deleteButton.setText("Удалить")
 
+        self.refreshButton = QtWidgets.QPushButton(self)
+        self.refreshButton.clicked.connect(self.updateDocuments)
+        self.refreshButton.setText("Обновить список")
+
         self.createMenuBar()
 
         vbox = QVBoxLayout()
         vbox.addWidget(self.documentsList)
         vbox.addWidget(self.newDocumentButton)
         vbox.addWidget(self.deleteButton)
+        vbox.addWidget(self.refreshButton)
 
         widget = QtWidgets.QWidget()
         widget.setLayout(vbox)
@@ -121,13 +126,10 @@ class DocumentsWindow(QtWidgets.QMainWindow):
                 QtWidgets.QMessageBox.critical(self,
                                                "Creating document error",
                                                f"Status code: {resp.status_code}")
-        # self.editor_win = Editor("New document", -1)
-        # self.editor_win.new_file.connect(self.updateDocuments)
-        # self.editor_win.show()
         self.updateDocuments()
+
     def updateDocuments(self):
         self.documentsList.clear()
-
         try:
             # JSON objects of documents
             documents = rq.get("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents")
