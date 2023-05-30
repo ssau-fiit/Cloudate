@@ -126,7 +126,7 @@ class TextEdit(QtWidgets.QTextEdit):
                     # print("Selection to the right")
                     pass
 
-            serv_event = self.getServerEvent(OpType.DELETE, 1, current_position, "\b")
+            serv_event = self.getServerEvent(OpType.DELETE, 1, current_position - 1, "\b")
             # print("Backspace pressed")
 
         elif event.key() == Qt.Key_Enter:
@@ -171,11 +171,11 @@ class TextEdit(QtWidgets.QTextEdit):
 
         # if type is present in data, then it is not first message
         if 'type' in data:
-
             if "text" in json_data:
-
                 # Обработка приходящих операций
-                index = json_data["index"]
+                index = 0
+                if "index" in json_data:
+                    index = json_data["index"]
                 current_text = self.toPlainText()
                 new_text = ""
                 # Insert
