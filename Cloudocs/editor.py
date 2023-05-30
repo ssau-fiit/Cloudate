@@ -52,6 +52,7 @@ class WebSocketThread(QThread):
     async def on_message(self, message):
         # This function is called everytime a new message is received from the server
         self.srvMsgChannel.emit(message)
+        print("Message:", message)
 
     async def listen(self):
         # Create a WebSocket connection
@@ -74,7 +75,7 @@ class TextEdit(QtWidgets.QTextEdit):
         self.last_ver = 1
 
         # Creating websocket (will be initialized in webSocketThread)
-        self.wsock_url = "ws://api.cloudocs.parasource.tech:8080/api/v1/documents/" + str(self.ID)
+        self.wsock_url = f"ws://{ServerAPI.host}:{ServerAPI.url}/api/v1/documents/" + str(self.ID)
         self.wsock = None
 
         # Creating separate thread for socket listener
@@ -156,31 +157,30 @@ class TextEdit(QtWidgets.QTextEdit):
     @QtCore.Slot(str)
     def msgsHandler(self, text: str):
         data = json.loads(text)
-        # print(f"Received message: {data}")
         decoded_string = base64.b64decode(data["event"]).decode('utf-8')
         json_data = json.loads(decoded_string)
 
-        print(json_data)
+        print("Json data:", json_data)
 
         # if type is present in data, then it is not first message
         if 'type' in data:
             if "lastVersion" in json_data:
                 last_ver = json_data["lastVersion"]
                 self.last_ver = last_ver
-                print("received last version is", last_ver)
+                # print("received last version is", last_ver)
 
             if "text" in json_data:
+                pass
                 # Обработка приходящих операций
-                print("Json data:", json_data)
-                index = json_data["index"]
-                current_text = self.toPlainText()
-                new_text = ""
-                if "type" == "INSERT":
-                    new_text = current_text[:index] + json_data["text"] + current_text[index:]
-                elif "type" == "DELETE":
-                    new_text = current_text[:index] + current_text[index+1:]
+                # index = json_data["index"]
+                # current_text = self.toPlainText()
+                # new_text = ""
+                # if "type" == "INSERT":
+                #     new_text = current_text[:index] + json_data["text"] + current_text[index:]
+                # elif "type" == "DELETE":
+                #     new_text = current_text[:index] + current_text[index+1:]
 
-                self.setText(new_text)
+                # self.setText(new_text)
 
         else:
             self.setFontFamily("SF Pro Display")
@@ -207,67 +207,6 @@ class Editor(QtWidgets.QMainWindow):
         self.text_edit.setTextColor("black")
 
         self.setCentralWidget(self.text_edit)
-
-        self.createMenuBar()
-
-    def createMenuBar(self):
-        self.menuBar = QMenuBar()
-        self.setMenuBar(self.menuBar)
-
-        fileMenu = QMenu("&Файл", self)
-        self.menuBar.addMenu(fileMenu)
-
-        fileMenu.addAction("Сохранить", self.action_clicked)
-
-    def action_clicked(self):
-        action = self.sender()
-
-        if action.text() == "Сохранить":
-
-            # If creating new document
-            if self.ID == -1:
-                inputDialog = InputDialog()
-                if inputDialog.exec() == 0:
-                    # Creating new document
-                    doc_name = inputDialog.nameEdit.text()
-                    resp = rq.post(ServerAPI.url + ServerAPI.createDocument,
-                                   json={
-                                       "name": doc_name,
-                                       "author": "Will Smith"
-                                   })
-
-                    if resp.status_code == 200:
-                        json_doc = resp.json()
-                        self.ID = json_doc["ID"]
-                        self.name = json_doc["name"]
-
-                        self.setWindowTitle(self.name)
-
-                        QtWidgets.QMessageBox.information(self,
-                                                          "Creating new document",
-                                                          "New document created successfully")
-                        self.new_file.emit()
-
-                    else:
-                        QtWidgets.QMessageBox.critical(self,
-                                                       "Creating document error",
-                                                       f"Status code: {resp.status_code}")
-
-                else:
-                    QtWidgets.QMessageBox.critical(self,
-                                                   "Dialog error",
-                                                   f"Some error with dialog")
-
-            # Saving text of document
-            doc_text = self.text_edit.toPlainText()
-            resp = rq.post("http://api.cloudocs.parasource.tech:8080" + "/api/v1/documents/" + str(self.ID),
-                           json={"text": doc_text})
-
-            if resp.status_code == 200:
-                QtWidgets.QMessageBox.information(self, "All is good", "Changes saved!")
-            else:
-                QtWidgets.QMessageBox.critical(self,
-                                               "Sending text error", f"Status code: {resp.status_code}")
 
     def closeEvent(self, event):
         self.text_edit.webSocketThread.terminate()
