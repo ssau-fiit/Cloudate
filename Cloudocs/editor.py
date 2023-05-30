@@ -97,6 +97,9 @@ class TextEdit(QtWidgets.QTextEdit):
             "version": self.last_ver,
             "text": text
         }
+
+        print("Operation:", operation)
+
         json_op = json.dumps(operation)
         encoded_json_op = base64.b64encode(bytes(json_op, 'utf-8'))
         serv_event = {
