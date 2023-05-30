@@ -64,6 +64,8 @@ class WebSocketThread(QThread):
 
 
 class TextEdit(QtWidgets.QTextEdit):
+    userPress = Signal(QtGui.QKeyEvent)
+
     def __init__(self, editor, ID: int):
         super().__init__()
         self.ID = ID
@@ -148,22 +150,34 @@ class TextEdit(QtWidgets.QTextEdit):
         # print(f"Index sent: {current_position}")
 
         asyncio.run(self.wsock.send(json.dumps(serv_event)))
-        print("Event: ", serv_event)
+        # print("Event: ", serv_event)
         super().keyPressEvent(event)
 
     @QtCore.Slot(str)
     def msgsHandler(self, text: str):
         data = json.loads(text)
-        print(f"Received message: {data}")
+        # print(f"Received message: {data}")
         decoded_string = base64.b64decode(data["event"]).decode('utf-8')
+        json_data = json.loads(decoded_string)
+
+        print(json_data)
 
         # if type is present in data, then it is not first message
         if 'type' in data:
-            json_data = json.loads(decoded_string)
             if "lastVersion" in json_data:
                 last_ver = json_data["lastVersion"]
                 self.last_ver = last_ver
                 print("received last version is", last_ver)
+
+            # Обработка приходящих операций
+            if "type" == "INSERT":
+                index = json_data["index"]
+                current_text = self.toPlainText()
+                new_text = current_text[:index] + json_data["text"] + current_text[index:]
+                self.setText(new_text)
+            elif "type" == "DELETE":
+                pass
+
         else:
             self.setFontFamily("SF Pro Display")
             json_data = json.loads(decoded_string)
