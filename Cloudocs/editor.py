@@ -129,7 +129,10 @@ class TextEdit(QtWidgets.QTextEdit):
                     # print("Selection to the right")
                     pass
 
-            serv_event = self.getServerEvent(OpType.DELETE, 1, current_position - 1, "\b")
+            serv_event = self.getServerEvent(OpType.DELETE,
+                                             cursor.selectionEnd() - cursor.selectionStart(),
+                                             current_position - 1,
+                                             "\b")
             # print("Backspace pressed")
 
         elif event.key() == Qt.Key_Enter:
@@ -188,8 +191,7 @@ class TextEdit(QtWidgets.QTextEdit):
                     new_text = current_text[:index] + json_data["text"] + current_text[index:]
                 # Delete
                 else:
-                    new_text = current_text[:index] + current_text[index+1:]
-                print(new_text)
+                    new_text = current_text[:index] + current_text[index+json_data["len"]:]
                 self.setText(new_text)
 
         else:
