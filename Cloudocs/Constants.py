@@ -1,6 +1,6 @@
 class ServerAPI:
-    url = "http://api.cloudocs.parasource.tech:8080"
-    host = "api.cloudocs.parasource.tech"
+    url = "http://localhost:8080"
+    host = "localhost"
     port = "8080"
     # POST
     auth = "/api/v1/auth"

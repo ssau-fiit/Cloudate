@@ -51,7 +51,7 @@ class RegistrationWindow(QtWidgets.QMainWindow):
         username = self.usernameEdit.text()
         password = self.passwordEdit.text()
 
-        url = "http://api.cloudocs.parasource.tech:8080/api/v1/auth"
+        url = "http://localhost:8080/api/v1/auth"
         data = {"username": username, "password": password}
 
         try:
