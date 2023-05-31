@@ -56,6 +56,8 @@ class RegistrationWindow(QtWidgets.QMainWindow):
 
         try:
             response = requests.post(url, json = data)
+            print("Response status code:", response.status_code)
+
             if response.status_code != 200:
                 if response.status_code == 401:
                     QtWidgets.QMessageBox.critical(self, "Ошибка аутентификации",
