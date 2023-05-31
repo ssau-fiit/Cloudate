@@ -1,6 +1,6 @@
 class ServerAPI:
-    url = "http://localhost:8080"
-    host = "localhost"
+    url = "http://10.60.7.203:8080"
+    host = "10.60.7.203"
     port = "8080"
     # POST
     auth = "/api/v1/auth"

@@ -83,7 +83,7 @@ class DocumentsWindow(QtWidgets.QMainWindow):
     def addDocumentsToList(self):
         try:
             # JSON objects of documents
-            documents = rq.get("http://localhost:8080" + "/api/v1/documents")
+            documents = rq.get("http://10.60.7.203:8080" + "/api/v1/documents")
 
             if documents.status_code == 200 and documents is not None:
                 # Adding documents to the list
@@ -132,7 +132,7 @@ class DocumentsWindow(QtWidgets.QMainWindow):
         self.documentsList.clear()
         try:
             # JSON objects of documents
-            documents = rq.get("http://localhost:8080" + "/api/v1/documents")
+            documents = rq.get("http://10.60.7.203:8080" + "/api/v1/documents")
 
             if documents.status_code == 200 and documents is not None:
                 # Adding documents to the list
