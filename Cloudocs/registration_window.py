@@ -2,7 +2,7 @@ import sys
 import requests
 from PySide6 import QtWidgets
 from documents_window import DocumentsWindow
-
+from Constants import ServerAPI
 
 class RegistrationWindow(QtWidgets.QMainWindow):
 
@@ -51,11 +51,11 @@ class RegistrationWindow(QtWidgets.QMainWindow):
         username = self.usernameEdit.text()
         password = self.passwordEdit.text()
 
-        url = "http://10.60.7.203:8080/api/v1/auth"
+        # url = "http://10.60.7.203:8080/api/v1/auth"
         data = {"username": username, "password": password}
 
         try:
-            response = requests.post(url, json = data)
+            response = requests.post(ServerAPI.url + ServerAPI.auth, json = data)
             print("Response status code:", response.status_code)
 
             if response.status_code != 200:

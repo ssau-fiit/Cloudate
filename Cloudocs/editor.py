@@ -78,7 +78,7 @@ class TextEdit(QtWidgets.QTextEdit):
         self.last_ver = 1
 
         # Creating websocket (will be initialized in webSocketThread)
-        self.wsock_url = f"ws://{ServerAPI.host}:{ServerAPI.port}/api/v1/documents/" + str(self.file_id)
+        self.wsock_url = f"ws://{ServerAPI.host}:{ServerAPI.port}/api/v1/documents/{str(self.file_id)}"
         self.wsock = None
 
         # Creating separate thread for socket listener
